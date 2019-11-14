@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:map_app_dummy_client/cities_helper.dart';
@@ -95,7 +94,8 @@ class _GoogleMapsState extends State<GoogleMaps> {
   }
 
   City cityFromSearchScreen;
-  City currentCity = City(name: 'New Delhi',country: "IN",lat: 28.6139,lng: 77.2090 );
+  City currentCity =
+      City(name: 'New Delhi', country: "IN", lat: 28.6139, lng: 77.2090);
 
   @override
   Widget build(BuildContext context) {
@@ -177,7 +177,8 @@ class _GoogleMapsState extends State<GoogleMaps> {
                             backgroundColor: Colors.white,
                             child: Icon(
                               Icons.add_location,
-                              size: 36,color: Color(0xFF398D3C),
+                              size: 36,
+                              color: Color(0xFF398D3C),
                             ),
                           ),
                         ],
@@ -192,12 +193,12 @@ class _GoogleMapsState extends State<GoogleMaps> {
                           onPressed: () {
                             myController.animateCamera(
                                 CameraUpdate.newCameraPosition(CameraPosition(
-                                  target: LatLng(currentCity.lat,
-                                      currentCity.lng),
-                                  zoom: 11,
-                                )));
+                              target: LatLng(currentCity.lat, currentCity.lng),
+                              zoom: 11,
+                            )));
                           },
-                          label: Text('${currentCity.country},${currentCity.name}'),
+                          label: Text(
+                              '${currentCity.country},${currentCity.name}'),
                           icon: Icon(Icons.my_location),
                         ),
                       ),
@@ -241,18 +242,28 @@ class SearchCities extends SearchDelegate<City> {
   @override
   Widget buildResults(BuildContext context) {
     // TODO: implement buildResults
-    var suggestion = cities.where((city)=> city.name.toLowerCase().contains(query.toLowerCase())).toList();
-    return  ListView.builder(
+    var suggestion = query == ''
+        ? []
+        : cities
+            .where(
+                (city) => city.name.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+    return ListView.builder(
       itemCount: suggestion.length,
       shrinkWrap: true,
       itemBuilder: (context, index) {
-        return ListTile(
-          onTap: () {
-            close(context, suggestion[index]);
-          },
-          title: Text('${suggestion[index].country},${suggestion[index].name}'),
-          leading: Icon(Icons.location_searching),
-        );
+        return query == ''
+            ? Container(
+                child: Text('Search'),
+              )
+            : ListTile(
+                onTap: () {
+                  close(context, suggestion[index]);
+                },
+                title: Text(
+                    '${suggestion[index].country},${suggestion[index].name}'),
+                leading: Icon(Icons.location_searching),
+              );
       },
     );
   }
@@ -274,7 +285,8 @@ class SearchCities extends SearchDelegate<City> {
                 onTap: () {
                   close(context, suggestion[index]);
                 },
-                title: Text('${suggestion[index].country},${suggestion[index].name}'),
+                title: Text(
+                    '${suggestion[index].country},${suggestion[index].name}'),
                 leading: Icon(Icons.location_searching),
               );
             },
