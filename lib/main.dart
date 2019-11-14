@@ -174,10 +174,10 @@ class _GoogleMapsState extends State<GoogleMaps> {
                             onPressed: _onAddMarkerButtonPressed,
                             materialTapTargetSize:
                                 MaterialTapTargetSize.shrinkWrap,
-                            backgroundColor: Color(0xFF398D3C),
+                            backgroundColor: Colors.white,
                             child: Icon(
                               Icons.add_location,
-                              size: 36,
+                              size: 36,color: Color(0xFF398D3C),
                             ),
                           ),
                         ],
