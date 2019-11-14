@@ -95,7 +95,7 @@ class _GoogleMapsState extends State<GoogleMaps> {
   }
 
   City cityFromSearchScreen;
-  City initialCity = City(name: 'New Delhi',country: "IN",lat: 28.6139,lng: 77.2090 );
+  City currentCity = City(name: 'New Delhi',country: "IN",lat: 28.6139,lng: 77.2090 );
 
   @override
   Widget build(BuildContext context) {
@@ -132,7 +132,7 @@ class _GoogleMapsState extends State<GoogleMaps> {
                                 cityFromSearchScreen.lng),
                             zoom: 11,
                           )));
-                          initialCity = cityFromSearchScreen;
+                          currentCity = cityFromSearchScreen;
                           setState(() {});
                         },
                         child: Container(
@@ -188,16 +188,16 @@ class _GoogleMapsState extends State<GoogleMaps> {
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: FloatingActionButton.extended(
-                          heroTag: initialCity,
+                          heroTag: currentCity,
                           onPressed: () {
                             myController.animateCamera(
                                 CameraUpdate.newCameraPosition(CameraPosition(
-                                  target: LatLng(initialCity.lat,
-                                      initialCity.lng),
+                                  target: LatLng(currentCity.lat,
+                                      currentCity.lng),
                                   zoom: 11,
                                 )));
                           },
-                          label: Text('${initialCity.country},${initialCity.name}'),
+                          label: Text('${currentCity.country},${currentCity.name}'),
                           icon: Icon(Icons.my_location),
                         ),
                       ),
