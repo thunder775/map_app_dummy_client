@@ -1,8 +1,8 @@
-import 'dart:async';
-import 'dart:ffi';
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:map_app_dummy_client/cities_helper.dart';
+import 'package:modal_progress_hud/modal_progress_hud.dart';
 
 void main() => runApp(MyApp());
 
@@ -11,6 +11,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
@@ -26,6 +27,8 @@ class GoogleMaps extends StatefulWidget {
 }
 
 class _GoogleMapsState extends State<GoogleMaps> {
+  CitiesHelper helper = CitiesHelper();
+
   int count = 1;
   String locationText = 'Bangalore';
   List locations = [
@@ -61,135 +64,220 @@ class _GoogleMapsState extends State<GoogleMaps> {
     });
   }
 
+  String jsonData;
+  bool loading = false;
+  List citiesList;
+  List<City> cityObjects = [];
+
+  void getJsonCitiesList() async {
+    loading = true;
+    setState(() {});
+    citiesList = await helper.loadJson();
+    print('start');
+    for (int i = 0; i < citiesList.length; i++) {
+      cityObjects.add(City(
+          country: citiesList[i]['country'],
+          lat: double.parse(citiesList[i]['lat']),
+          lng: double.parse(citiesList[i]['lng']),
+          name: citiesList[i]['name']));
+    }
+    print('stop');
+    loading = false;
+    setState(() {});
+  }
+
+  @override
+  void initState() {
+//    SystemChrome.setEnabledSystemUIOverlays([]);
+    getJsonCitiesList();
+    // TODO: implement initState
+    super.initState();
+  }
+
+  City cityFromSearchScreen;
+  City initialCity = City(name: 'New Delhi',country: "IN",lat: 28.6139,lng: 77.2090 );
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Color(0xFF398D3C),
-        centerTitle: true,
-        title: Text('Sample Map App'),
-      ),
-      body: Column(
-        children: <Widget>[
-          Expanded(
-            flex: 3,
-            child: Stack(
-              children: <Widget>[
-                GoogleMap(
-                  onCameraMove: _onCameraMove,
-                  markers: _markers,
-                  onMapCreated: _onMapCreated,
-                  initialCameraPosition: CameraPosition(
-                    target: _center,
-                    zoom: 11.0,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Align(
-                    alignment: Alignment.topRight,
-                    child: Column(
-                      children: <Widget>[
-                        FloatingActionButton(
-                          onPressed: _onAddMarkerButtonPressed,
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          backgroundColor: Color(0xFF398D3C),
-                          child: Icon(
-                            Icons.add_location,
-                            size: 36,
+      body: ModalProgressHUD(
+        inAsyncCall: loading,
+        child: SafeArea(
+          child: Column(
+            children: <Widget>[
+              Expanded(
+                flex: 3,
+                child: Stack(
+                  children: <Widget>[
+                    GoogleMap(
+                      onCameraMove: _onCameraMove,
+                      markers: _markers,
+                      onMapCreated: _onMapCreated,
+                      initialCameraPosition: CameraPosition(
+                        target: LatLng(28.6139, 77.2090),
+                        zoom: 11.0,
+                      ),
+                    ),
+                    Positioned(
+                      top: 10,
+                      child: GestureDetector(
+                        onTap: () async {
+                          cityFromSearchScreen = await showSearch(
+                              context: context,
+                              delegate: SearchCities(cities: cityObjects));
+                          print('==================');
+                          myController.animateCamera(
+                              CameraUpdate.newCameraPosition(CameraPosition(
+                            target: LatLng(cityFromSearchScreen.lat,
+                                cityFromSearchScreen.lng),
+                            zoom: 11,
+                          )));
+                          initialCity = cityFromSearchScreen;
+                          setState(() {});
+                        },
+                        child: Container(
+                          height: 50,
+                          width: MediaQuery.of(context).size.width,
+                          decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(.9),
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(20))),
+                          child: Row(
+                            children: <Widget>[
+                              Padding(
+                                padding: const EdgeInsets.only(left: 28.0),
+                                child: Text('Search'),
+                              ),
+                              Spacer(),
+                              IconButton(
+                                icon: Icon(Icons.search),
+                                onPressed: () {
+                                  showSearch(
+                                      context: context,
+                                      delegate: SearchCities());
+
+                                  print('hey');
+                                },
+                              )
+                            ],
                           ),
                         ),
-                        SizedBox(
-                          height: 10,
-                        ),
-                        FloatingActionButton.extended(
-                          backgroundColor: Color(0xFF398D3C),
-                          onPressed: _locationOnPressed,
-                          label: Text('Next'),
-                          icon: Icon(Icons.navigate_next),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: FloatingActionButton.extended(
-                      onPressed: () {},
-                      label: Text(locationText),
-                      icon: Icon(Icons.my_location),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            height: 2,
-            width: double.infinity,
-            color: Color(0xFF398D3C),
-          ),
-          Expanded(
-            flex: 1,
-            child: Container(
-              width: double.infinity,
-              height: 40,
-              decoration: BoxDecoration(color: Color(0xFF398D3C)),
-              child: ListView.builder(
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: (){
-                      _tileOnPressed(index);
-                      setState(() {
-                        count=index+1;
-                        locationText = locations[index][0];
-                      });
-                    },
-                    child: Card(
+                    Positioned(
+                      bottom: 10,
+                      left: 10,
                       child: Column(
                         children: <Widget>[
-                          ListTile(
-                            trailing: Icon(Icons.my_location),
-                            title: Text('${locations[index][0]}'),
-                          )
+                          FloatingActionButton(
+                            heroTag: 'marker',
+                            onPressed: _onAddMarkerButtonPressed,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                            backgroundColor: Color(0xFF398D3C),
+                            child: Icon(
+                              Icons.add_location,
+                              size: 36,
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                  );
-                },
-                itemCount: locations.length,
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: FloatingActionButton.extended(
+                          heroTag: initialCity,
+                          onPressed: () {
+                            myController.animateCamera(
+                                CameraUpdate.newCameraPosition(CameraPosition(
+                                  target: LatLng(initialCity.lat,
+                                      initialCity.lng),
+                                  zoom: 11,
+                                )));
+                          },
+                          label: Text('${initialCity.country},${initialCity.name}'),
+                          icon: Icon(Icons.my_location),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          )
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }
+}
 
-  void _tileOnPressed(int index) {
-    myController.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
-      target: locations[index][1],
-      zoom: 8,
-    )));
+class SearchCities extends SearchDelegate<City> {
+  SearchCities({this.cities});
+
+  List<City> cities;
+
+  @override
+  List<Widget> buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: Icon(Icons.clear),
+        onPressed: () {
+          close(context, null);
+        },
+      ),
+    ];
   }
 
-  void _locationOnPressed() {
-    if (count < locations.length) {
-      myController.animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
-        target: locations[count][1],
-        zoom: 8,
-      )));
-      setState(() {
-        locationText = locations[count][0];
-        _center = locations[count][1];
-        count++;
-      });
-    } else {
-      count = 0;
-      _locationOnPressed();
-    }
+  @override
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+      icon: Icon(Icons.search),
+      onPressed: () {},
+    );
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    // TODO: implement buildResults
+    var suggestion = cities.where((city)=> city.name.toLowerCase().contains(query.toLowerCase())).toList();
+    return  ListView.builder(
+      itemCount: suggestion.length,
+      shrinkWrap: true,
+      itemBuilder: (context, index) {
+        return ListTile(
+          onTap: () {
+            close(context, suggestion[index]);
+          },
+          title: Text('${suggestion[index].country},${suggestion[index].name}'),
+          leading: Icon(Icons.location_searching),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    // TODO: implement buildSuggestions
+
+    var suggestion = cities
+        .where((city) => city.name.toLowerCase().contains(query.toLowerCase()))
+        .toList();
+    return query == ''
+        ? Container()
+        : ListView.builder(
+            itemCount: suggestion.length,
+            shrinkWrap: true,
+            itemBuilder: (context, index) {
+              return ListTile(
+                onTap: () {
+                  close(context, suggestion[index]);
+                },
+                title: Text('${suggestion[index].country},${suggestion[index].name}'),
+                leading: Icon(Icons.location_searching),
+              );
+            },
+          );
   }
 }
